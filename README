@@ -1,0 +1,5 @@
+gcalc
+---
+
+A command-line calculator that uses Google Calculator's JSON(-like) interface.
+
