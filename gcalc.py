@@ -1,13 +1,14 @@
 #!/usr/bin/python
 
-"""gcalc.py: Command-line utility for Google Calculator."""
+"""Usage: gcalc [options] [query]
 
-__author__ = "Matthew Hielscher"
-__date__ = "2011-09-11"
-__copyright__ = "Copyright 2011, Matthew Hielscher"
-__license__ = "BSD"
-__version__ = "0.1"
-__maintainer__ = "Matthew Hielscher"
+Running without arguments will start interactive mode. Specifying an initial
+query without the -i option will evaluate only that query.
+
+Options:
+  -h    show this help message and exit
+  -i    run in interactive mode (even with an initial query)
+"""
 
 
 import os
@@ -20,6 +21,7 @@ import json
 import xml.sax.saxutils
 
 def process_query(q):
+	"""Send the query, interpret the response, and return a composed string."""
 	#encode query, make request, read response
 	url = "http://www.google.com/ig/calculator"
 	data = [("hl", "en"), ("q", q)]
@@ -50,12 +52,14 @@ def process_query(q):
 	else:
 		return jdata['lhs']+" = "+jdata['rhs']
 
-
 interactive = False
 initialquery = None
 
 #read options, initial query, interactive mode
-if len(sys.argv) < 2:
+if "-h" in sys.argv:
+	print __doc__
+	exit(0)
+elif len(sys.argv) < 2:
 	interactive = True
 elif sys.argv[1] == "-i":
 	interactive = True
@@ -93,18 +97,3 @@ while interactive:
 		sys.exit(0)
 	print process_query(inputline)
 
-
-"""
-#Non-JSON parsing
-r = r.strip("{} \n")
-items = r.split(",")
-rdata = {}
-for i in items:
-	label, value = i.split(": ")
-	value = value.strip('"')
-	rdata[label] = value
-if rdata['error'] != "":
-	print "Error: "+rdata['error']
-else:
-	print (rdata['lhs']+" = "+rdata['rhs']).replace('\xa0', ',')
-"""
