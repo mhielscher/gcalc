@@ -68,6 +68,7 @@ def process_query(q):
 
 interactive = False
 initialquery = None
+is_shell = sys.stdin.isatty()
 
 #read options, initial query, interactive mode
 if "-h" in sys.argv:
@@ -87,7 +88,7 @@ if initialquery:
 	print process_query(initialquery)
 
 #register the history file for the interactive shell
-if interactive:
+if interactive and is_shell:
 	def save_history(histfile):
 		readline.write_history_file(histfile)
 
@@ -103,11 +104,14 @@ if interactive:
 # - end with 'quit' or 'exit'
 while interactive:
 	try:
-		inputline = raw_input("; ")
+		if is_shell:
+			inputline = raw_input("; ")
+		else:
+			inputline = sys.stdin.readline()
 	except EOFError:
-		print ''
+		if is_shell: print ''
 		sys.exit(0)
-	if inputline == "exit" or inputline == "quit":
+	if inputline == "exit" or inputline == "quit" or (not is_shell and inputline == ''):
 		sys.exit(0)
-	print process_query(inputline)
+	print process_query(inputline.strip())
 
