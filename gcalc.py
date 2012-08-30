@@ -20,6 +20,11 @@ import urllib2
 import json
 import xml.sax.saxutils
 
+error_codes = {
+    "0": "No calculation identified.",
+    "4": "Did not recognize input.",
+    }
+
 def process_query(q):
 	"""Send the query, interpret the response, and return a composed string."""
 	#encode query, make request, read response
@@ -48,9 +53,18 @@ def process_query(q):
 
 	#print result
 	if jdata['error'] != "":
-		return "Error: "+jdata['error']
+		error = jdata['error']
+		if error in error_codes.keys():
+		    error = error_codes[error]
+		return "Error: "+error
 	else:
-		return jdata['lhs']+" = "+jdata['rhs']
+		lhs = jdata['lhs']
+		rhs = jdata['rhs']
+		sup_start = rhs.find("<sup>")
+		if sup_start != -1:
+			sup_end = rhs.find("</sup>")
+			rhs = rhs[:sup_start] + "^" + rhs[sup_start+5:sup_end] + rhs[sup_end+6:]
+		return lhs + " = " + rhs
 
 interactive = False
 initialquery = None
