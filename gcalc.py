@@ -27,7 +27,7 @@ error_codes = {
 
 def process_query(q):
 	"""Send the query, interpret the response, and return a composed string."""
-	#encode query, make request, read response
+	# Encode query, make request, read response
 	url = "http://www.google.com/ig/calculator"
 	data = [("hl", "en"), ("q", q)]
 	postdata = urllib.urlencode(data)
@@ -36,19 +36,19 @@ def process_query(q):
 	r = f.read()
 	#print r
 
-	#correct the invalid JSON
+	# Correct the invalid JSON
 	r = r.replace('{', '{"')
 	r = r.replace(': ', '":')
 	r = r.replace(',', ', "')
 	r = r.replace('\\x', '\\u00')
-	#replace the nonbreaking space that python chokes on
+	# Replace the nonbreaking space that python chokes on
 	r = r.replace('\xa0', ',')
-	#replace & escape sequence and unescape HTML
+	# Replace & escape sequence and unescape HTML
 	r = r.replace('\\u0026', '&')
 	r = xml.sax.saxutils.unescape(r, {'&#215;':'x'})
 	#print r
 
-	#parse JSON
+	# Parse JSON
 	jdata = json.loads(r)
 
 	#print result
@@ -70,7 +70,7 @@ interactive = False
 initialquery = None
 is_shell = sys.stdin.isatty()
 
-#read options, initial query, interactive mode
+# Read options, initial query, interactive mode
 if "-h" in sys.argv:
 	print __doc__
 	exit(0)
@@ -83,11 +83,11 @@ elif sys.argv[1] == "-i":
 else:
 	initialquery = sys.argv[1]
 
-#process query entered on the command line if it exists
+# Process query entered on the command line if it exists
 if initialquery:
 	print process_query(initialquery)
 
-#register the history file for the interactive shell
+# Register the history file for the interactive shell
 if interactive and is_shell:
 	def save_history(histfile):
 		readline.write_history_file(histfile)
@@ -100,8 +100,7 @@ if interactive and is_shell:
 
 	atexit.register(save_history, histfile)
 
-#enter the (basic) interactive shell
-# - end with 'quit' or 'exit'
+# Enter the interactive shell - end with 'quit' or 'exit'
 while interactive:
 	try:
 		if is_shell:
