@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 """Usage: gcalc [options] [query]
 
@@ -17,8 +18,7 @@ import atexit
 import sys
 import urllib
 import urllib2
-import json
-import xml.sax.saxutils
+import simplejson as json
 
 error_codes = {
     "0": "No calculation identified.",
@@ -34,19 +34,21 @@ def process_query(q):
 	url = url+'?'+postdata
 	f = urllib2.urlopen(url)
 	r = f.read()
-	#print r
+	# Apparently this is the encoding of the return?
+	r = r.decode('cp1252')
 
 	# Correct the invalid JSON
 	r = r.replace('{', '{"')
 	r = r.replace(': ', '":')
 	r = r.replace(',', ', "')
-	r = r.replace('\\x', '\\u00')
+	r = r.replace(u'\\x', u'\\u00')
 	# Replace the nonbreaking space that python chokes on
-	r = r.replace('\xa0', ',')
-	# Replace & escape sequence and unescape HTML
-	r = r.replace('\\u0026', '&')
-	r = xml.sax.saxutils.unescape(r, {'&#215;':'x'})
-	#print r
+	r = r.replace(u'\xa0', u',')
+	# Replace obfuscated escape sequence with the proper character
+	if os.environ['LANG'].lower().find('utf'):
+	    r = r.replace(u'\\u0026#215;', u'×')
+	else:
+	    r = r.replace(u'\\u0026#215;', u'x')
 
 	# Parse JSON
 	jdata = json.loads(r)
