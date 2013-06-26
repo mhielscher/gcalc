@@ -97,7 +97,9 @@ while interactive:
 	except EOFError:
 		if is_shell: print ''
 		sys.exit(0)
-	if inputline == "exit" or inputline == "quit" or (not is_shell and inputline == ''):
+	if not inputline.strip():
+	    continue
+	elif inputline == "exit" or inputline == "quit" or (not is_shell and inputline == ''):
 		sys.exit(0)
 	print process_query(inputline.strip())
 
