@@ -20,7 +20,7 @@ import requests
 import simplejson as json
 import re
 
-__VERSION__ = "2013.5.30"
+__VERSION__ = "2013.8.25"
 
 USER_AGENT = "gcalc/"+__VERSION__+" "+requests.utils.default_user_agent()
 
@@ -50,7 +50,7 @@ def process_query(q):
 	# Replace the nonbreaking space that python chokes on
 	s = s.replace(u'\xa0', u',')
 	# Replace obfuscated escape sequence with the proper character
-	if os.environ['LANG'].lower().find('utf'):
+	if os.environ['LANG'].lower().find('utf') != -1:
 	    s = s.replace(u'\\u0026#215;', u'×')
 	else:
 	    s = s.replace(u'\\u0026#215;', u'x')
@@ -71,12 +71,10 @@ def process_query(q):
 	else:
 		lhs = jdata['lhs']
 		rhs = jdata['rhs']
+		# Translate fractions
 		rhs = re.sub(r'<sup>(.*)</sup>&#8260;<sub>(.*)</sub>', r' \1/\2', rhs)
+		# Translate exponents
 		rhs = re.sub(r'<sup>(.*)</sup>', r'^\1', rhs)
-		#sup_start = rhs.find("<sup>")
-		#if sup_start != -1:
-		#	sup_end = rhs.find("</sup>")
-		#	rhs = rhs[:sup_start] + "^" + rhs[sup_start+5:sup_end] + rhs[sup_end+6:]
 		return lhs + " = " + rhs
 
 
