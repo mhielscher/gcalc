@@ -20,6 +20,7 @@ import requests
 import simplejson as json
 import re
 from bs4 import BeautifulSoup
+from HTMLParser import HTMLParser
 
 __VERSION__ = "2013.8.25"
 
@@ -30,6 +31,20 @@ ERROR_CODES = {
     "0": "No calculation identified.",
     "4": "Did not recognize input.",
     }
+
+class MLStripper(HTMLParser):
+    def __init__(self):
+        self.reset()
+        self.fed = []
+    def handle_data(self, d):
+        self.fed.append(d)
+    def get_data(self):
+        return ''.join(self.fed)
+
+def strip_tags(html):
+    s = MLStripper()
+    s.feed(html)
+    return s.get_data()
 
 def process_query(q):
     """Send the query, interpret the response, and return a composed string."""
@@ -56,6 +71,10 @@ def process_query(q):
     elif page.find("span", "cwcot") != None:
         lhs = ''.join(unicode(t).strip() for t in page.find("span", "cwclet").contents)
         rhs = ''.join(unicode(t).strip() for t in page.find("span", "cwcot").contents)
+    elif page.find("input", id="ucw_lhs_d") != None:
+        # This does not include units; not sure how to grab those
+        lhs = page.find("input", id="ucw_lhs_d")['value'] + " ="
+        rhs = page.find("input", id="ucw_rhs_d")['value']
     else:
         return "Error: Expression not recognized."
     
@@ -63,6 +82,15 @@ def process_query(q):
     rhs = re.sub(r'<sup>(.*)</sup>&#8260;<sub>(.*)</sub>', r' \1/\2', rhs)
     # Translate exponents
     rhs = re.sub(r'<sup>(.*)</sup>', r'^\1', rhs)
+    # Separate divs
+    lhs = re.sub(r'</div>\s*', "</div>\n", lhs)
+    rhs = re.sub(r'</div>\s*', "</div>\n", rhs)
+    # Strip remaining HTML
+    lhs = strip_tags(lhs)
+    rhs = strip_tags(rhs)
+    # Strip whitespace at start and end of lines
+    lhs = re.sub(r'\s*\n\s*', "\n", lhs).strip()
+    rhs = re.sub(r'\s*\n\s*', "\n", rhs).strip()
     return lhs + " " + rhs
 
 
