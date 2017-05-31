@@ -64,19 +64,31 @@ def process_query(q):
     else:
         s = s.replace(u'\\u0026#215;', u'x')
 
-    page = BeautifulSoup(s)
+    page = BeautifulSoup(s, "lxml")
+    # Calculation with operators
     if page.find("div", "vk_ans") != None:
         lhs = ''.join(unicode(t).strip() for t in page.find("div", "vk_gy").contents)
         rhs = ''.join(unicode(t).strip() for t in page.find("div", "vk_ans").contents)
+    # ?
     elif page.find("span", "cwcot") != None:
         lhs = ''.join(unicode(t).strip() for t in page.find("span", "cwclet").contents)
         rhs = ''.join(unicode(t).strip() for t in page.find("span", "cwcot").contents)
+    # ?
     elif page.find("input", id="ucw_lhs_d") != None:
         # This does not include units; not sure how to grab those
         lhs = page.find("input", id="ucw_lhs_d")['value'] + " ="
         rhs = page.find("input", id="ucw_rhs_d")['value']
+    # Unit conversion
+    elif page.find("div", "vk_c") != None:
+        # Return first hit if it exists, else dummy tag
+        lhs_value = unicode(next(iter(page.select("#_Aif input")), page.input)['value'])
+        lhs_unit = unicode(next(iter(page.select("#_Aif select option[selected]")), page.option).text)
+        lhs = "%s %s = " % (lhs_value, lhs_unit)
+        rhs_value = unicode(next(iter(page.select("#_Cif input")), page.input)['value'])
+        rhs_unit = unicode(next(iter(page.select("#_Cif select option[selected]")), page.option).text)
+        rhs = "%s %s" % (rhs_value, rhs_unit)
     else:
-        return "Error: Expression not recognized."
+        return "Error: Could not parse answer."
     
     # Translate fractions
     rhs = re.sub(r'<sup>(.*)</sup>&#8260;<sub>(.*)</sub>', r' \1/\2', rhs)
