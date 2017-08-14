@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 """Usage: gcalc [options] [query]
@@ -17,10 +17,12 @@ import readline
 import atexit
 import sys
 import requests
-import simplejson as json
+import json
 import re
+#from HTMLParser import HTMLParser
+
+## TODO: load this in the background after the prompt comes up
 from bs4 import BeautifulSoup
-from HTMLParser import HTMLParser
 
 __VERSION__ = "2013.8.25"
 
@@ -32,19 +34,19 @@ ERROR_CODES = {
     "4": "Did not recognize input.",
     }
 
-class MLStripper(HTMLParser):
-    def __init__(self):
-        self.reset()
-        self.fed = []
-    def handle_data(self, d):
-        self.fed.append(d)
-    def get_data(self):
-        return ''.join(self.fed)
+# class MLStripper(HTMLParser):
+#     def __init__(self):
+#         self.reset()
+#         self.fed = []
+#     def handle_data(self, d):
+#         self.fed.append(d)
+#     def get_data(self):
+#         return ''.join(self.fed)
 
-def strip_tags(html):
-    s = MLStripper()
-    s.feed(html)
-    return s.get_data()
+# def strip_tags(html):
+#     s = MLStripper()
+#     s.feed(html)
+#     return s.get_data()
 
 def process_query(q):
     """Send the query, interpret the response, and return a composed string."""
@@ -67,12 +69,12 @@ def process_query(q):
     page = BeautifulSoup(s, "lxml")
     # Calculation with operators
     if page.find("div", "vk_ans") != None:
-        lhs = ''.join(unicode(t).strip() for t in page.find("div", "vk_gy").contents)
-        rhs = ''.join(unicode(t).strip() for t in page.find("div", "vk_ans").contents)
+        lhs = ''.join(t.strip() for t in page.find("div", "vk_gy").contents)
+        rhs = ''.join(t.strip() for t in page.find("div", "vk_ans").contents)
     # ?
     elif page.find("span", "cwcot") != None:
-        lhs = ''.join(unicode(t).strip() for t in page.find("span", "cwclet").contents)
-        rhs = ''.join(unicode(t).strip() for t in page.find("span", "cwcot").contents)
+        lhs = ''.join(t.strip() for t in page.find("span", "cwclet").contents)
+        rhs = ''.join(t.strip() for t in page.find("span", "cwcot").contents)
     # ?
     elif page.find("input", id="ucw_lhs_d") != None:
         # This does not include units; not sure how to grab those
@@ -81,11 +83,11 @@ def process_query(q):
     # Unit conversion
     elif page.find("div", "vk_c") != None:
         # Return first hit if it exists, else dummy tag
-        lhs_value = unicode(next(iter(page.select("#_Aif input")), page.input)['value'])
-        lhs_unit = unicode(next(iter(page.select("#_Aif select option[selected]")), page.option).text)
+        lhs_value = next(iter(page.select("#_Aif input")), page.input)['value']
+        lhs_unit = next(iter(page.select("#_Aif select option[selected]")), page.option).text
         lhs = "%s %s = " % (lhs_value, lhs_unit)
-        rhs_value = unicode(next(iter(page.select("#_Cif input")), page.input)['value'])
-        rhs_unit = unicode(next(iter(page.select("#_Cif select option[selected]")), page.option).text)
+        rhs_value = next(iter(page.select("#_Cif input")), page.input)['value']
+        rhs_unit = next(iter(page.select("#_Cif select option[selected]")), page.option).text
         rhs = "%s %s" % (rhs_value, rhs_unit)
     else:
         return "Error: Could not parse answer."
@@ -98,8 +100,8 @@ def process_query(q):
     lhs = re.sub(r'</div>\s*', "</div>\n", lhs)
     rhs = re.sub(r'</div>\s*', "</div>\n", rhs)
     # Strip remaining HTML
-    lhs = strip_tags(lhs)
-    rhs = strip_tags(rhs)
+    lhs = BeautifulSoup(lhs, "lxml").get_text()
+    rhs = BeautifulSoup(rhs, "lxml").get_text()
     # Strip whitespace at start and end of lines
     lhs = re.sub(r'\s*\n\s*', "\n", lhs).strip()
     rhs = re.sub(r'\s*\n\s*', "\n", rhs).strip()
@@ -113,7 +115,7 @@ if __name__ == '__main__':
 
     # Read options, initial query, interactive mode
     if "-h" in sys.argv:
-        print __doc__
+        print(__doc__)
         exit(0)
     elif len(sys.argv) < 2:
         interactive = True
@@ -126,7 +128,7 @@ if __name__ == '__main__':
 
     # Process query entered on the command line if it exists
     if initialquery:
-        print process_query(initialquery)
+        print(process_query(initialquery))
 
     # Register the history file for the interactive shell
     if interactive and is_shell:
@@ -145,13 +147,14 @@ if __name__ == '__main__':
     while interactive:
         try:
             if is_shell:
-                inputline = raw_input("; ")
+                inputline = input("; ")
             else:
                 inputline = sys.stdin.readline()
         except EOFError:
-            if is_shell: print ''
+            if is_shell:
+                print('')
             sys.exit(0)
         if inputline == "exit" or inputline == "quit" or (not is_shell and inputline == ''):
             sys.exit(0)
-        print process_query(inputline.strip())
+        print(process_query(inputline.strip()))
 
