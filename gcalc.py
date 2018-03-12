@@ -90,7 +90,7 @@ def process_query(q):
         rhs_unit = next(iter(page.select("#_Cif select option[selected]")), page.option).text
         rhs = "%s %s" % (rhs_value, rhs_unit)
     else:
-        return "Error: Could not parse answer."
+        return "Error: Could not find answer on result page.\nQuery: {}\nDirect link: {}".format(q, r.url)
     
     # Translate fractions
     rhs = re.sub(r'<sup>(.*)</sup>&#8260;<sub>(.*)</sub>', r' \1/\2', rhs)
@@ -107,6 +107,15 @@ def process_query(q):
     rhs = re.sub(r'\s*\n\s*', "\n", rhs).strip()
     return lhs + " " + rhs
 
+def parse_query_args(args):
+    """Determine how to join or separate arguments into one or more initial queries."""
+    if len(args) > 1 and ' ' in ''.join(args):
+        for q in args:
+            print(process_query(q.strip()))
+    else:
+        for q in re.split('[;\n]', ' '.join(args)):
+            print (process_query(q.strip()))
+
 
 if __name__ == '__main__':
     interactive = False
@@ -122,13 +131,9 @@ if __name__ == '__main__':
     elif sys.argv[1] == "-i":
         interactive = True
         if len(sys.argv) > 2:
-            initialquery = sys.argv[2]
+            parse_query_args(sys.argv[2:])
     else:
-        initialquery = sys.argv[1]
-
-    # Process query entered on the command line if it exists
-    if initialquery:
-        print(process_query(initialquery))
+        parse_query_args(sys.argv[1:])
 
     # Register the history file for the interactive shell
     if interactive and is_shell:
