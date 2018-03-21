@@ -57,9 +57,9 @@ def process_query(q):
     r = requests.get(url, params=data, headers={'User-Agent': USER_AGENT})
     if r.status_code != 200:
         return "Error: HTTP status %d" % r.status_code
-    
+
     s = r.text
-    
+
     # Replace obfuscated escape sequence with the proper character
     if os.environ['LANG'].lower().find('utf') != -1:
         s = s.replace(u'\\u0026#215;', u'×')
@@ -83,12 +83,10 @@ def process_query(q):
     # Unit conversion
     elif page.find("div", "vk_c") != None:
         # Return first hit if it exists, else dummy tag
-        lhs_value = next(iter(page.select("#_Aif input")), page.input)['value']
-        lhs_unit = next(iter(page.select("#_Aif select option[selected]")), page.option).text
-        lhs = "%s %s = " % (lhs_value, lhs_unit)
-        rhs_value = next(iter(page.select("#_Cif input")), page.input)['value']
-        rhs_unit = next(iter(page.select("#_Cif select option[selected]")), page.option).text
-        rhs = "%s %s" % (rhs_value, rhs_unit)
+        values = [e['value'] for e in page.select("div.vk_c input")]
+        units = [e.text for e in page.select(".vk_c select option[selected]")][1:]
+        lhs = "%s %s = " % (values[0], units[0])
+        rhs = "%s %s" % (values[1], units[1])
     else:
         return "Error: Could not find answer on result page.\nQuery: {}\nDirect link: {}".format(q, r.url)
     
