@@ -11,20 +11,30 @@ Options:
   -i    run in interactive mode (even with an initial query)
 """
 
-
+# Import the "lighter" modules
 import os
 import readline
 import atexit
 import sys
-import requests
 import json
 import re
-#from HTMLParser import HTMLParser
+import threading
 
-## TODO: load this in the background after the prompt comes up
-from bs4 import BeautifulSoup
 
-__VERSION__ = "2013.8.25"
+## Load the heavy modules in the background after the prompt comes up
+requests = None
+lxml = None
+BeautifulSoup = None
+def import_heavies():
+    global requests, lxml, BeautifulSoup
+    import requests
+    import lxml
+    from bs4 import BeautifulSoup
+th = threading.Timer(0, import_heavies)
+th.start()
+
+
+__VERSION__ = "2018.4.29"
 
 #USER_AGENT = "gcalc/"+__VERSION__+" "+requests.utils.default_user_agent()
 USER_AGENT = "gcalc/"+__VERSION__+" "+"Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36"
@@ -54,6 +64,9 @@ def process_query(q):
     # The iGoogle JSON-like interface is gone, so resort to screen-scraping.
     url = "http://www.google.com/search"
     data = {"hl": "en", "q": q}
+
+    while requests == None: # Wait for requests to load
+        time.sleep(0.1)
     r = requests.get(url, params=data, headers={'User-Agent': USER_AGENT})
     if r.status_code != 200:
         return "Error: HTTP status %d" % r.status_code
@@ -66,11 +79,13 @@ def process_query(q):
     else:
         s = s.replace(u'\\u0026#215;', u'x')
 
+    while BeautifulSoup == None: # Wait for BeautifulSoup (with lxml) to load
+        time.sleep(0.1)
     page = BeautifulSoup(s, "lxml")
     # Calculation with operators
-    if page.find("div", "vk_ans") != None:
+    if page.find("div", "vk_bk") != None:
         lhs = ''.join(t.strip() for t in page.find("div", "vk_gy").contents)
-        rhs = ''.join(t.strip() for t in page.find("div", "vk_ans").contents)
+        rhs = ''.join(t.strip() for t in page.find("div", "dDoNo").contents)
     # ?
     elif page.find("span", "cwcot") != None:
         lhs = ''.join(t.strip() for t in page.find("span", "cwclet").contents)
@@ -146,7 +161,7 @@ if __name__ == '__main__':
 
         atexit.register(save_history, histfile)
 
-    # Enter the interactive shell - end with 'quit' or 'exit'
+    # Enter the interactive shell - end with 'quit', 'exit', or <EOF> (Ctrl-D)
     while interactive:
         try:
             if is_shell:
@@ -159,5 +174,6 @@ if __name__ == '__main__':
             sys.exit(0)
         if inputline == "exit" or inputline == "quit" or (not is_shell and inputline == ''):
             sys.exit(0)
-        print(process_query(inputline.strip()))
+        if inputline:
+            print(process_query(inputline.strip()))
 
