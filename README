@@ -1,5 +1,5 @@
 gcalc
 ---
 
-A command-line calculator that uses Google Calculator's JSON(-like) interface.
+A command-line calculator that interfaces with Google's calculator functions. It originally used a JSON(-like) API that was discontinued - it now parses the DOM directly and extracts the relevant answers.
 
