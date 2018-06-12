@@ -86,8 +86,15 @@ def process_query(q):
 
     # Most calculations:
     if page.find("div", "vk_bk") != None:
-        lhs = ''.join(str(t).strip() for t in page.find("div", "vk_gy").contents)
-        rhs = ''.join(str(t).strip() for t in page.find("div", "dDoNo").contents)
+        # Currency conversion
+        if page.find("span", id="knowledge-currency__src-amount"):
+            lhs = "{:s} {:s} = ".format(''.join(page.select("span#knowledge-currency__src-amount")[0].contents),
+                                        ''.join(page.select("span#knowledge-currency__src-currency")[0].contents))
+            rhs = "{:s} {:s}".format(''.join(page.select("span#knowledge-currency__tgt-amount")[0].contents),
+                                     ''.join(page.select("span#knowledge-currency__tgt-currency")[0].contents))
+        else:
+            lhs = ''.join(str(t).strip() for t in page.find("div", "vk_gy").contents)
+            rhs = ''.join(str(t).strip() for t in page.find("div", "dDoNo").contents)
 
     # ...deprecated?:
     elif page.find("span", "cwcot") != None:
